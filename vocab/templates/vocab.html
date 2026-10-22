@@ -80,36 +80,50 @@
 <br />
 <div class="row">
   <div class="col-xs-6 text-center">
-  <form id="entry" method="POST" action="/_check">
     <label for="attempt">Word:</label>
     <input id="attempt" name="attempt" type="text" width="15"
       autocomplete="off"  autofocus />
-    <input type="submit" name="try" />
-  </form>
-</div></div>
+  </div>
+</div>
 
 <br />
 
-{% if session.matches|length is not equalto 0  %}
-<h2>You found </h2>
-<p id="results">
-  {% for match in session.matches %}
-  {{ match }} 
-  {% endfor %}
-</p>
-{% endif %}
+<h2>You found</h2>
+<p id="results">{% for match in session.matches %}{{ match }} {% endfor %}</p>
 
-
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <!-- Mismatch, already found, etc. "flashed" from Python -->
-    {% for message in messages %}
-      <p class="message">{{ message }}</p>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
+<p class="message" id="message"></p>
 
 
 
  </div> <!-- container -->
+ <script>
+  $(document).ready(function () {
+    $("#attempt").on("input", function () {
+      var text = $(this).val().trim();
+      if (text.length === 0) {
+        $("#message").text("");
+        return;
+      }
+
+      $.getJSON("/_check", { text: text }, function (data) {
+        var r = data.result;
+
+        $("#results").text(r.matches.join(" "));
+
+        if (r.complete) {
+          window.location.href = "/success";
+        } else if (r.new_match) {
+          $("#attempt").val("");
+          $("#message").text("");
+        } else if (r.already_found) {
+          $("#message").text("You already found " + text);
+        } else if (!r.in_jumble) {
+          $("#message").text("\"" + text + "\" can't be made from the letters in the jumble");
+        } else {
+          $("#message").text("");
+        }
+      });
+    });
+  });
+</script>
 </body> </html>
